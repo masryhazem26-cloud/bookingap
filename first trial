@@ -1,0 +1,371 @@
+<style>
+  :root{
+    --ink:#1c1b19;
+    --paper:#f7f4ee;
+    --brass:#b8863b;
+    --brass-dark:#8f6528;
+    --line:#d8d2c4;
+    --ok:#3f6b4a;
+    --err:#a8412f;
+    font-family:'Barlow', -apple-system, sans-serif;
+  }
+  @font-face{font-family:'Barlow Condensed';src:local('Barlow Condensed');}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<div id="app" style="background:var(--paper);color:var(--ink);min-height:100vh;padding:0;">
+  <div style="max-width:980px;margin:0 auto;padding:28px 20px 60px;">
+
+    <!-- HEADER -->
+    <header style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:28px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:baseline;gap:12px;">
+        <div style="font-family:'Barlow Condensed';font-weight:800;font-size:34px;letter-spacing:0.5px;line-height:1;">FADE&nbsp;&amp;&nbsp;CO.</div>
+        <div style="font-family:'JetBrains Mono';font-size:11px;color:var(--brass-dark);letter-spacing:1.5px;text-transform:uppercase;">Est. Booking Counter</div>
+      </div>
+      <div id="queueCount" style="font-family:'JetBrains Mono';font-size:12px;color:var(--ink);opacity:0.65;"></div>
+    </header>
+
+    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:start;" id="mainGrid">
+
+      <!-- LEFT: BOOKING FLOW -->
+      <div>
+
+        <!-- STEP 1: SERVICE -->
+        <div style="margin-bottom:30px;">
+          <div class="stepLabel">01 — Choose your service</div>
+          <div id="serviceList" style="display:flex;flex-direction:column;gap:8px;margin-top:12px;"></div>
+        </div>
+
+        <!-- STEP 2: DATE -->
+        <div style="margin-bottom:30px;">
+          <div class="stepLabel">02 — Choose your day</div>
+          <div id="dateStrip" style="display:flex;gap:6px;margin-top:12px;overflow-x:auto;padding-bottom:4px;"></div>
+        </div>
+
+        <!-- STEP 3: TIME -->
+        <div style="margin-bottom:30px;">
+          <div class="stepLabel">03 — Choose your time</div>
+          <div id="timeGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;"></div>
+        </div>
+
+        <!-- STEP 4: DETAILS -->
+        <div style="margin-bottom:10px;">
+          <div class="stepLabel">04 — Your details</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;max-width:380px;">
+            <input id="custName" placeholder="Full name" style="input"/>
+            <input id="custPhone" placeholder="Phone number" style="input"/>
+            <textarea id="custNote" placeholder="Note for the barber (optional)" rows="2" style="input"></textarea>
+          </div>
+        </div>
+
+        <div id="formMsg" style="font-family:'JetBrains Mono';font-size:12px;color:var(--err);min-height:18px;margin-top:6px;"></div>
+      </div>
+
+      <!-- RIGHT: TICKET -->
+      <div style="position:sticky;top:20px;">
+        <div id="ticket" style="background:var(--ink);color:var(--paper);border-radius:2px;padding:22px 22px 18px;position:relative;overflow:hidden;">
+          <div style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--brass);margin-bottom:14px;">Queue Ticket</div>
+
+          <div class="ticketRow"><span class="ticketK">Service</span><span class="ticketV" id="tkService">—</span></div>
+          <div class="ticketRow"><span class="ticketK">Day</span><span class="ticketV" id="tkDate">—</span></div>
+          <div class="ticketRow"><span class="ticketK">Time</span><span class="ticketV" id="tkTime">—</span></div>
+          <div class="ticketRow"><span class="ticketK">Duration</span><span class="ticketV" id="tkDuration">—</span></div>
+
+          <div style="border-top:1px dashed rgba(247,244,238,0.3);margin:14px 0;"></div>
+
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <span style="font-family:'JetBrains Mono';font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:0.7;">Total</span>
+            <span id="tkPrice" style="font-family:'Barlow Condensed';font-weight:700;font-size:28px;color:var(--brass);">—</span>
+          </div>
+
+          <button id="confirmBtn" style="width:100%;margin-top:18px;background:var(--brass);color:var(--ink);border:none;padding:13px;border-radius:2px;font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">
+            Punch Ticket
+          </button>
+
+          <div style="position:absolute;left:-8px;top:50%;width:16px;height:16px;background:var(--paper);border-radius:50%;transform:translateY(-50%);"></div>
+          <div style="position:absolute;right:-8px;top:50%;width:16px;height:16px;background:var(--paper);border-radius:50%;transform:translateY(-50%);"></div>
+        </div>
+
+        <!-- MY BOOKINGS -->
+        <div style="margin-top:24px;">
+          <div class="stepLabel">Your tickets</div>
+          <div id="myBookings" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .stepLabel{font-family:'Barlow Condensed';font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:var(--brass-dark);}
+  input[style="input"], textarea[style="input"]{all:unset;}
+  .fieldInput{width:100%;box-sizing:border-box;border:1.5px solid var(--line);background:#fff;padding:10px 12px;font-family:'Barlow';font-size:14px;border-radius:2px;color:var(--ink);}
+  .fieldInput:focus{outline:none;border-color:var(--brass);}
+  .svcCard{display:flex;justify-content:space-between;align-items:center;border:1.5px solid var(--line);background:#fff;padding:12px 14px;border-radius:2px;cursor:pointer;transition:border-color .15s;}
+  .svcCard:hover{border-color:var(--brass);}
+  .svcCard.active{border-color:var(--brass);background:#fbf3e6;}
+  .svcName{font-family:'Barlow';font-weight:600;font-size:14.5px;}
+  .svcMeta{font-family:'JetBrains Mono';font-size:11.5px;opacity:0.6;margin-top:2px;}
+  .svcPrice{font-family:'Barlow Condensed';font-weight:700;font-size:17px;color:var(--brass-dark);}
+  .dateChip{flex:0 0 auto;text-align:center;border:1.5px solid var(--line);background:#fff;padding:8px 12px;border-radius:2px;cursor:pointer;min-width:56px;}
+  .dateChip:hover{border-color:var(--brass);}
+  .dateChip.active{border-color:var(--brass);background:var(--ink);color:var(--paper);}
+  .dateDow{font-family:'JetBrains Mono';font-size:10px;text-transform:uppercase;opacity:0.6;}
+  .dateNum{font-family:'Barlow Condensed';font-weight:700;font-size:18px;}
+  .timeSlot{border:1.5px solid var(--line);background:#fff;padding:9px 4px;text-align:center;border-radius:2px;cursor:pointer;font-family:'JetBrains Mono';font-size:12.5px;}
+  .timeSlot:hover:not(.taken){border-color:var(--brass);}
+  .timeSlot.active{border-color:var(--brass);background:var(--ink);color:var(--paper);}
+  .timeSlot.taken{opacity:0.3;text-decoration:line-through;cursor:not-allowed;}
+  .ticketRow{display:flex;justify-content:space-between;margin-bottom:8px;font-family:'Barlow';font-size:13.5px;}
+  .ticketK{opacity:0.55;}
+  .ticketV{font-weight:600;text-align:right;}
+  .myTicket{border:1.5px solid var(--line);background:#fff;padding:10px 12px;border-radius:2px;font-family:'JetBrains Mono';font-size:11.5px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .cancelX{cursor:pointer;color:var(--err);font-weight:700;background:none;border:none;font-family:'JetBrains Mono';font-size:11px;}
+  @media(max-width:720px){#mainGrid{grid-template-columns:1fr;} #timeGrid{grid-template-columns:repeat(3,1fr);}}
+</style>
+
+<script>
+(function(){
+  // ---------- JSON DATA MODEL ----------
+  const SERVICES = [
+    { id: "classic-cut",  name: "Classic Cut",        duration: 30, price: 28 },
+    { id: "skin-fade",    name: "Skin Fade",          duration: 45, price: 36 },
+    { id: "beard-trim",   name: "Beard Trim",         duration: 20, price: 18 },
+    { id: "cut-and-beard",name: "Cut & Beard Combo",  duration: 55, price: 48 },
+    { id: "hot-towel",    name: "Hot Towel Shave",    duration: 30, price: 32 }
+  ];
+  const OPEN_HOUR = 9, CLOSE_HOUR = 18; // 09:00–18:00, last slot before close
+  const SLOT_STEP_MIN = 30;
+  const DAYS_AHEAD = 7;
+
+  let state = {
+    service: null,
+    dateISO: null,
+    time: null,
+    bookedSlots: {},   // { "YYYY-MM-DD": ["09:00","09:30",...] }  shared
+    myBookings: []      // personal
+  };
+
+  const $ = sel => document.querySelector(sel);
+  const fieldClass = el => el; // no-op
+
+  function fmtDateChip(d){
+    return { dow: d.toLocaleDateString(undefined,{weekday:'short'}), num: d.getDate() };
+  }
+  function isoOf(d){ return d.toISOString().slice(0,10); }
+  function labelDate(iso){
+    const d = new Date(iso+"T00:00:00");
+    return d.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'});
+  }
+
+  function buildSlots(){
+    const slots = [];
+    for(let h=OPEN_HOUR; h<CLOSE_HOUR; h++){
+      for(let m=0; m<60; m+=SLOT_STEP_MIN){
+        slots.push(String(h).padStart(2,'0')+":"+String(m).padStart(2,'0'));
+      }
+    }
+    return slots;
+  }
+  const ALL_SLOTS = buildSlots();
+
+  // ---------- STORAGE ----------
+  async function loadShared(){
+    try{
+      const res = await window.storage.get('booked-slots', true);
+      state.bookedSlots = res ? JSON.parse(res.value) : {};
+    }catch(e){ state.bookedSlots = {}; }
+  }
+  async function saveShared(){
+    try{ await window.storage.set('booked-slots', JSON.stringify(state.bookedSlots), true); }
+    catch(e){ console.error('storage error', e); }
+  }
+  async function loadMine(){
+    try{
+      const res = await window.storage.get('my-bookings', false);
+      state.myBookings = res ? JSON.parse(res.value) : [];
+    }catch(e){ state.myBookings = []; }
+  }
+  async function saveMine(){
+    try{ await window.storage.set('my-bookings', JSON.stringify(state.myBookings), false); }
+    catch(e){ console.error('storage error', e); }
+  }
+
+  // ---------- RENDER ----------
+  function renderServices(){
+    const wrap = $('#serviceList');
+    wrap.innerHTML = '';
+    SERVICES.forEach(s=>{
+      const card = document.createElement('div');
+      card.className = 'svcCard' + (state.service && state.service.id===s.id ? ' active' : '');
+      card.innerHTML = `<div><div class="svcName">${s.name}</div><div class="svcMeta">${s.duration} min</div></div><div class="svcPrice">$${s.price}</div>`;
+      card.onclick = ()=>{ state.service = s; renderAll(); };
+      wrap.appendChild(card);
+    });
+  }
+
+  function renderDates(){
+    const wrap = $('#dateStrip');
+    wrap.innerHTML = '';
+    const today = new Date();
+    for(let i=0;i<DAYS_AHEAD;i++){
+      const d = new Date(today);
+      d.setDate(d.getDate()+i);
+      const iso = isoOf(d);
+      const {dow,num} = fmtDateChip(d);
+      const chip = document.createElement('div');
+      chip.className = 'dateChip' + (state.dateISO===iso ? ' active' : '');
+      chip.innerHTML = `<div class="dateDow">${dow}</div><div class="dateNum">${num}</div>`;
+      chip.onclick = ()=>{ state.dateISO = iso; state.time = null; renderAll(); };
+      wrap.appendChild(chip);
+    }
+  }
+
+  function renderTimes(){
+    const wrap = $('#timeGrid');
+    wrap.innerHTML = '';
+    if(!state.dateISO){
+      wrap.innerHTML = `<div style="grid-column:1/-1;font-family:'JetBrains Mono';font-size:12px;opacity:0.5;">Pick a day first</div>`;
+      return;
+    }
+    const taken = new Set(state.bookedSlots[state.dateISO] || []);
+    ALL_SLOTS.forEach(t=>{
+      const isTaken = taken.has(t);
+      const el = document.createElement('div');
+      el.className = 'timeSlot' + (isTaken ? ' taken' : '') + (state.time===t ? ' active' : '');
+      el.textContent = t;
+      if(!isTaken){
+        el.onclick = ()=>{ state.time = t; renderAll(); };
+      }
+      wrap.appendChild(el);
+    });
+  }
+
+  function renderTicket(){
+    $('#tkService').textContent = state.service ? state.service.name : '—';
+    $('#tkDate').textContent = state.dateISO ? labelDate(state.dateISO) : '—';
+    $('#tkTime').textContent = state.time || '—';
+    $('#tkDuration').textContent = state.service ? state.service.duration + ' min' : '—';
+    $('#tkPrice').textContent = state.service ? '$'+state.service.price : '—';
+  }
+
+  function renderMyBookings(){
+    const wrap = $('#myBookings');
+    if(!state.myBookings.length){
+      wrap.innerHTML = `<div style="font-family:'JetBrains Mono';font-size:12px;opacity:0.5;">No tickets yet</div>`;
+      return;
+    }
+    wrap.innerHTML = '';
+    state.myBookings
+      .slice()
+      .sort((a,b)=> (a.dateISO+a.time).localeCompare(b.dateISO+b.time))
+      .forEach(b=>{
+        const row = document.createElement('div');
+        row.className = 'myTicket';
+        row.innerHTML = `<span>${labelDate(b.dateISO)} · ${b.time} · ${b.serviceName}</span>`;
+        const btn = document.createElement('button');
+        btn.className = 'cancelX';
+        btn.textContent = 'CANCEL';
+        btn.onclick = ()=> cancelBooking(b);
+        row.appendChild(btn);
+        wrap.appendChild(row);
+      });
+  }
+
+  function renderQueueCount(){
+    const todayISO = isoOf(new Date());
+    const n = (state.bookedSlots[todayISO] || []).length;
+    $('#queueCount').textContent = `${n} booked today`;
+  }
+
+  function renderAll(){
+    renderServices();
+    renderDates();
+    renderTimes();
+    renderTicket();
+    renderMyBookings();
+    renderQueueCount();
+    $('#formMsg').textContent = '';
+  }
+
+  // ---------- ACTIONS ----------
+  async function confirmBooking(){
+    const name = $('#custName').value.trim();
+    const phone = $('#custPhone').value.trim();
+    const note = $('#custNote').value.trim();
+    const msg = $('#formMsg');
+
+    if(!state.service){ msg.textContent = 'Pick a service first.'; return; }
+    if(!state.dateISO){ msg.textContent = 'Pick a day first.'; return; }
+    if(!state.time){ msg.textContent = 'Pick a time first.'; return; }
+    if(!name){ msg.textContent = 'Enter your name.'; return; }
+    if(!phone){ msg.textContent = 'Enter your phone number.'; return; }
+
+    // re-check availability against latest shared state to avoid double-booking
+    await loadShared();
+    const taken = new Set(state.bookedSlots[state.dateISO] || []);
+    if(taken.has(state.time)){
+      msg.textContent = 'That slot was just taken — pick another.';
+      renderTimes();
+      return;
+    }
+
+    const booking = {
+      id: 'bk_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      serviceId: state.service.id,
+      serviceName: state.service.name,
+      price: state.service.price,
+      duration: state.service.duration,
+      dateISO: state.dateISO,
+      time: state.time,
+      name, phone, note,
+      createdAt: new Date().toISOString()
+    };
+
+    if(!state.bookedSlots[state.dateISO]) state.bookedSlots[state.dateISO] = [];
+    state.bookedSlots[state.dateISO].push(state.time);
+    await saveShared();
+
+    state.myBookings.push(booking);
+    await saveMine();
+
+    msg.style.color = 'var(--ok)';
+    msg.textContent = `Booked — see you ${labelDate(state.dateISO)} at ${state.time}.`;
+
+    state.time = null;
+    $('#custNote').value = '';
+    renderAll();
+    msg.style.color = 'var(--ok)';
+    msg.textContent = `Booked — see you ${labelDate(booking.dateISO)} at ${booking.time}.`;
+  }
+
+  async function cancelBooking(b){
+    state.myBookings = state.myBookings.filter(x=>x.id!==b.id);
+    await saveMine();
+
+    await loadShared();
+    if(state.bookedSlots[b.dateISO]){
+      state.bookedSlots[b.dateISO] = state.bookedSlots[b.dateISO].filter(t=>t!==b.time);
+    }
+    await saveShared();
+
+    renderAll();
+  }
+
+  // wire inputs to fieldInput class since inline style="input" is invalid CSS
+  ['custName','custPhone','custNote'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.classList.add('fieldInput');
+  });
+
+  $('#confirmBtn').addEventListener('click', confirmBooking);
+
+  // ---------- INIT ----------
+  (async function init(){
+    await Promise.all([loadShared(), loadMine()]);
+    state.dateISO = isoOf(new Date());
+    renderAll();
+  })();
+})();
+</script>
