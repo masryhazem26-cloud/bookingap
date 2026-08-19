@@ -1,0 +1,509 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#12211e;
+    --paper:#f4f7f6;
+    --teal:#146356;
+    --teal-deep:#0d3f37;
+    --line:#dbe4e1;
+    --fasting:#a8451f;
+    --fasting-bg:#fbeee6;
+    --ok:#2f7a52;
+    --err:#b23a2e;
+  }
+  #plApp *{box-sizing:border-box;}
+  #plApp{font-family:'IBM Plex Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .stepLabel{font-weight:600;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:var(--teal-deep);}
+  .stepSub{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink);opacity:0.5;margin-top:2px;}
+
+  .testCard{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);background:#fff;padding:12px 14px;border-radius:3px;cursor:pointer;}
+  .testCard:hover{border-color:var(--teal);}
+  .testCard.active{border-color:var(--teal);background:#eef7f5;}
+  .checkbox{flex:0 0 auto;width:18px;height:18px;border:1.5px solid var(--line);border-radius:3px;margin-top:2px;display:flex;align-items:center;justify-content:center;background:#fff;}
+  .testCard.active .checkbox{background:var(--teal);border-color:var(--teal);}
+  .checkbox svg{display:none;width:11px;height:11px;}
+  .testCard.active .checkbox svg{display:block;}
+  .testName{font-weight:600;font-size:14.5px;}
+  .testMeta{font-family:'IBM Plex Mono';font-size:11px;opacity:0.6;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;}
+  .badge{display:inline-block;padding:1px 6px;border-radius:2px;font-size:10px;}
+  .badge.fast{background:var(--fasting-bg);color:var(--fasting);}
+  .testPrice{margin-left:auto;font-family:'IBM Plex Mono';font-weight:600;font-size:14px;white-space:nowrap;}
+
+  .toggleRow{display:flex;gap:8px;margin-top:12px;}
+  .toggleBtn{flex:1;border:1.5px solid var(--line);background:#fff;padding:12px;border-radius:3px;cursor:pointer;text-align:left;}
+  .toggleBtn.active{border-color:var(--teal);background:#eef7f5;}
+  .toggleBtn .tTitle{font-weight:600;font-size:13.5px;}
+  .toggleBtn .tSub{font-family:'IBM Plex Mono';font-size:10.5px;opacity:0.55;margin-top:2px;}
+
+  .dateChip{flex:0 0 auto;text-align:center;border:1.5px solid var(--line);background:#fff;padding:8px 12px;border-radius:3px;cursor:pointer;min-width:54px;}
+  .dateChip:hover{border-color:var(--teal);}
+  .dateChip.active{border-color:var(--teal);background:var(--ink);color:var(--paper);}
+  .dateDow{font-family:'IBM Plex Mono';font-size:9.5px;text-transform:uppercase;opacity:0.6;}
+  .dateNum{font-weight:700;font-size:17px;}
+
+  .timeSlot{border:1.5px solid var(--line);background:#fff;padding:8px 4px;text-align:center;border-radius:3px;cursor:pointer;font-family:'IBM Plex Mono';font-size:12px;}
+  .timeSlot:hover:not(.taken){border-color:var(--teal);}
+  .timeSlot.active{border-color:var(--teal);background:var(--ink);color:var(--paper);}
+  .timeSlot.taken{opacity:0.3;text-decoration:line-through;cursor:not-allowed;}
+
+  .fieldInput{width:100%;border:1.5px solid var(--line);background:#fff;padding:10px 12px;font-family:'IBM Plex Sans';font-size:14px;border-radius:3px;color:var(--ink);}
+  .fieldInput:focus{outline:none;border-color:var(--teal);}
+  .fieldLabel{font-family:'IBM Plex Mono';font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.55;margin-bottom:4px;display:block;}
+
+  .fastingBanner{display:flex;gap:10px;align-items:flex-start;background:var(--fasting-bg);border:1px solid #edcdb9;color:var(--fasting);padding:10px 12px;border-radius:3px;font-size:13px;margin-top:14px;}
+
+  .slipRow{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px dashed rgba(244,247,246,0.15);}
+  .slipK{opacity:0.55;}
+  .slipV{font-weight:600;text-align:right;}
+
+  .myTicket{border:1.5px solid var(--line);background:#fff;padding:10px 12px;border-radius:3px;font-family:'IBM Plex Mono';font-size:11px;}
+  .myTicketTop{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .cancelX{cursor:pointer;color:var(--err);font-weight:600;background:none;border:none;font-family:'IBM Plex Mono';font-size:10.5px;}
+
+  @media(max-width:760px){#plGrid{grid-template-columns:1fr !important;} #plTimeGrid{grid-template-columns:repeat(3,1fr) !important;}}
+</style>
+
+<div id="plApp">
+  <div style="max-width:1000px;margin:0 auto;padding:26px 20px 60px;">
+
+    <header style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:26px;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-weight:700;font-size:26px;letter-spacing:0.2px;line-height:1;">Meridian&nbsp;Pathology&nbsp;Lab</div>
+        <div class="mono" style="font-size:10.5px;color:var(--teal-deep);letter-spacing:1.2px;text-transform:uppercase;margin-top:4px;">Sample Collection &amp; Test Booking</div>
+      </div>
+      <div id="plSampleCount" class="mono" style="font-size:11.5px;opacity:0.6;"></div>
+    </header>
+
+    <div id="plGrid" style="display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:start;">
+
+      <!-- LEFT -->
+      <div>
+
+        <div style="margin-bottom:26px;">
+          <div class="stepLabel">01 — Select tests</div>
+          <div class="stepSub">Choose one or more. Fasting requirements are shown per test.</div>
+          <div id="plTestList" style="display:flex;flex-direction:column;gap:8px;margin-top:12px;"></div>
+          <div id="plFastingBanner" style="display:none;"></div>
+        </div>
+
+        <div style="margin-bottom:26px;">
+          <div class="stepLabel">02 — Collection type</div>
+          <div class="toggleRow" id="plCollectionToggle"></div>
+        </div>
+
+        <div style="margin-bottom:26px;">
+          <div class="stepLabel">03 — Collection day</div>
+          <div id="plDateStrip" style="display:flex;gap:6px;margin-top:12px;overflow-x:auto;padding-bottom:4px;"></div>
+        </div>
+
+        <div style="margin-bottom:26px;">
+          <div class="stepLabel">04 — Time slot</div>
+          <div id="plTimeGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;"></div>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <div class="stepLabel">05 — Patient details</div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;max-width:420px;">
+            <div><span class="fieldLabel">Full name</span><input id="plName" class="fieldInput"/></div>
+            <div style="display:flex;gap:10px;">
+              <div style="flex:1;"><span class="fieldLabel">Age</span><input id="plAge" type="number" min="0" class="fieldInput"/></div>
+              <div style="flex:1;">
+                <span class="fieldLabel">Gender</span>
+                <select id="plGender" class="fieldInput">
+                  <option value="">Select</option>
+                  <option>Female</option>
+                  <option>Male</option>
+                  <option>Other / Prefer not to say</option>
+                </select>
+              </div>
+            </div>
+            <div><span class="fieldLabel">Phone number</span><input id="plPhone" class="fieldInput"/></div>
+            <div id="plAddressWrap" style="display:none;"><span class="fieldLabel">Home collection address</span><textarea id="plAddress" rows="2" class="fieldInput"></textarea></div>
+            <div><span class="fieldLabel">Referring doctor (optional)</span><input id="plDoctor" class="fieldInput"/></div>
+          </div>
+        </div>
+
+        <div id="plFormMsg" class="mono" style="font-size:12px;color:var(--err);min-height:18px;margin-top:8px;"></div>
+      </div>
+
+      <!-- RIGHT -->
+      <div style="position:sticky;top:20px;">
+        <div id="plSlip" style="background:var(--ink);color:var(--paper);border-radius:3px;padding:20px 20px 18px;">
+          <div class="mono" style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8fd6c4;margin-bottom:4px;">Requisition Slip</div>
+          <div class="mono" id="plAccession" style="font-size:15px;font-weight:600;letter-spacing:1px;margin-bottom:10px;">—</div>
+          <svg id="plBarcode" width="100%" height="34" style="margin-bottom:14px;display:block;"></svg>
+
+          <div id="plSlipTests" style="margin-bottom:4px;"></div>
+          <div class="slipRow"><span class="slipK">Collection</span><span class="slipV" id="plSlipCollection">—</span></div>
+          <div class="slipRow"><span class="slipK">Day</span><span class="slipV" id="plSlipDate">—</span></div>
+          <div class="slipRow"><span class="slipK">Time</span><span class="slipV" id="plSlipTime">—</span></div>
+
+          <div style="border-top:1px dashed rgba(244,247,246,0.25);margin:14px 0 10px;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <span class="mono" style="font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:0.65;">Total</span>
+            <span id="plSlipPrice" style="font-weight:700;font-size:26px;color:#8fd6c4;">—</span>
+          </div>
+
+          <button id="plConfirmBtn" style="width:100%;margin-top:16px;background:#8fd6c4;color:var(--teal-deep);border:none;padding:13px;border-radius:3px;font-weight:700;font-size:14.5px;letter-spacing:0.5px;cursor:pointer;">
+            Confirm Booking
+          </button>
+        </div>
+
+        <div style="margin-top:22px;">
+          <div class="stepLabel">Your bookings</div>
+          <div id="plMyBookings" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------- JSON DATA MODEL ----------
+  const TESTS = [
+    { id:"cbc",     name:"Complete Blood Count (CBC)",  sample:"Blood",  fastingHours:0,  reportTime:"Same day",  price:12 },
+    { id:"lipid",   name:"Lipid Profile",                sample:"Blood",  fastingHours:12, reportTime:"Next day",  price:22 },
+    { id:"lft",     name:"Liver Function Test (LFT)",    sample:"Blood",  fastingHours:8,  reportTime:"Next day",  price:24 },
+    { id:"kft",     name:"Kidney Function Test (KFT)",   sample:"Blood",  fastingHours:0,  reportTime:"Next day",  price:20 },
+    { id:"thyroid", name:"Thyroid Profile (T3, T4, TSH)",sample:"Blood",  fastingHours:0,  reportTime:"Next day",  price:26 },
+    { id:"hba1c",   name:"HbA1c (Blood Sugar Avg.)",     sample:"Blood",  fastingHours:0,  reportTime:"Same day",  price:18 },
+    { id:"urine",   name:"Urine Routine & Microscopy",   sample:"Urine",  fastingHours:0,  reportTime:"Same day",  price:10 },
+    { id:"vitd",    name:"Vitamin D (25-OH)",             sample:"Blood",  fastingHours:0,  reportTime:"2–3 days", price:34 }
+  ];
+
+  const COLLECTION_TYPES = [
+    { id:"home",   title:"Home Collection", sub:"Phlebotomist visits you · +$5",  open:7,  close:12, fee:5 },
+    { id:"walkin", title:"Walk-in at Lab",   sub:"Visit the lab counter",          open:7,  close:19, fee:0 }
+  ];
+
+  const SLOT_STEP_MIN = 30;
+  const DAYS_AHEAD = 7;
+
+  let state = {
+    selectedTests: [],   // array of test ids
+    collectionType: "home",
+    dateISO: null,
+    time: null,
+    bookedSlots: {},      // { type: { "YYYY-MM-DD": ["07:00",...] } } shared
+    myBookings: []
+  };
+
+  const $ = sel => document.querySelector(sel);
+
+  function isoOf(d){ return d.toISOString().slice(0,10); }
+  function labelDate(iso){
+    const d = new Date(iso+"T00:00:00");
+    return d.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'});
+  }
+  function currentCollection(){ return COLLECTION_TYPES.find(c=>c.id===state.collectionType); }
+  function selectedTestObjs(){ return TESTS.filter(t=>state.selectedTests.includes(t.id)); }
+
+  function buildSlots(type){
+    const c = COLLECTION_TYPES.find(c=>c.id===type);
+    const slots = [];
+    for(let h=c.open; h<c.close; h++){
+      for(let m=0; m<60; m+=SLOT_STEP_MIN){
+        slots.push(String(h).padStart(2,'0')+":"+String(m).padStart(2,'0'));
+      }
+    }
+    return slots;
+  }
+
+  // ---------- STORAGE ----------
+  async function loadShared(){
+    try{
+      const res = await window.storage.get('lab-booked-slots', true);
+      state.bookedSlots = res ? JSON.parse(res.value) : {};
+    }catch(e){ state.bookedSlots = {}; }
+  }
+  async function saveShared(){
+    try{ await window.storage.set('lab-booked-slots', JSON.stringify(state.bookedSlots), true); }
+    catch(e){ console.error(e); }
+  }
+  async function loadMine(){
+    try{
+      const res = await window.storage.get('lab-my-bookings', false);
+      state.myBookings = res ? JSON.parse(res.value) : [];
+    }catch(e){ state.myBookings = []; }
+  }
+  async function saveMine(){
+    try{ await window.storage.set('lab-my-bookings', JSON.stringify(state.myBookings), false); }
+    catch(e){ console.error(e); }
+  }
+
+  // ---------- ACCESSION / BARCODE ----------
+  function previewAccession(){
+    const d = new Date();
+    const compact = d.toISOString().slice(0,10).replace(/-/g,'');
+    return "PTH-" + compact + "-XXXX";
+  }
+  function finalAccession(){
+    const d = new Date();
+    const compact = d.toISOString().slice(0,10).replace(/-/g,'');
+    const rand = Math.floor(1000+Math.random()*9000);
+    return "PTH-" + compact + "-" + rand;
+  }
+  function renderBarcode(text){
+    const svg = $('#plBarcode');
+    const w = svg.clientWidth || 260;
+    let bars = '';
+    let x = 0;
+    for(let i=0;i<text.length;i++){
+      const code = text.charCodeAt(i);
+      const bw = 1 + (code % 3);
+      const gap = 1 + ((code>>2) % 3);
+      bars += `<rect x="${x}" y="0" width="${bw}" height="34" fill="#8fd6c4"/>`;
+      x += bw + gap;
+    }
+    svg.setAttribute('viewBox', `0 0 ${Math.max(x,w)} 34`);
+    svg.innerHTML = bars;
+  }
+
+  // ---------- RENDER ----------
+  function renderTests(){
+    const wrap = $('#plTestList');
+    wrap.innerHTML = '';
+    TESTS.forEach(t=>{
+      const active = state.selectedTests.includes(t.id);
+      const card = document.createElement('div');
+      card.className = 'testCard' + (active ? ' active' : '');
+      card.innerHTML = `
+        <div class="checkbox"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" stroke="#0d3f37" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="flex:1;">
+          <div class="testName">${t.name}</div>
+          <div class="testMeta">
+            <span>${t.sample}</span>
+            <span>Report: ${t.reportTime}</span>
+            ${t.fastingHours>0 ? `<span class="badge fast">Fasting ${t.fastingHours}h</span>` : ''}
+          </div>
+        </div>
+        <div class="testPrice">$${t.price}</div>
+      `;
+      card.onclick = ()=>{
+        if(active) state.selectedTests = state.selectedTests.filter(id=>id!==t.id);
+        else state.selectedTests.push(t.id);
+        renderAll();
+      };
+      wrap.appendChild(card);
+    });
+
+    const banner = $('#plFastingBanner');
+    const fastingTests = selectedTestObjs().filter(t=>t.fastingHours>0);
+    if(fastingTests.length){
+      const maxHours = Math.max(...fastingTests.map(t=>t.fastingHours));
+      banner.style.display = 'flex';
+      banner.className = 'fastingBanner';
+      banner.innerHTML = `<span>⚠</span><span><strong>Fasting required:</strong> ${maxHours}h before collection, for ${fastingTests.map(t=>t.name).join(', ')}. Water is fine.</span>`;
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
+  function renderCollectionToggle(){
+    const wrap = $('#plCollectionToggle');
+    wrap.innerHTML = '';
+    COLLECTION_TYPES.forEach(c=>{
+      const btn = document.createElement('div');
+      btn.className = 'toggleBtn' + (state.collectionType===c.id ? ' active' : '');
+      btn.innerHTML = `<div class="tTitle">${c.title}</div><div class="tSub">${c.sub}</div>`;
+      btn.onclick = ()=>{ state.collectionType = c.id; state.time = null; renderAll(); };
+      wrap.appendChild(btn);
+    });
+    $('#plAddressWrap').style.display = state.collectionType==='home' ? 'block' : 'none';
+  }
+
+  function renderDates(){
+    const wrap = $('#plDateStrip');
+    wrap.innerHTML = '';
+    const today = new Date();
+    for(let i=0;i<DAYS_AHEAD;i++){
+      const d = new Date(today);
+      d.setDate(d.getDate()+i);
+      const iso = isoOf(d);
+      const dow = d.toLocaleDateString(undefined,{weekday:'short'});
+      const chip = document.createElement('div');
+      chip.className = 'dateChip' + (state.dateISO===iso ? ' active' : '');
+      chip.innerHTML = `<div class="dateDow">${dow}</div><div class="dateNum">${d.getDate()}</div>`;
+      chip.onclick = ()=>{ state.dateISO = iso; state.time = null; renderAll(); };
+      wrap.appendChild(chip);
+    }
+  }
+
+  function renderTimes(){
+    const wrap = $('#plTimeGrid');
+    wrap.innerHTML = '';
+    if(!state.dateISO){
+      wrap.innerHTML = `<div class="mono" style="grid-column:1/-1;font-size:12px;opacity:0.5;">Pick a day first</div>`;
+      return;
+    }
+    const type = state.collectionType;
+    const taken = new Set((state.bookedSlots[type] && state.bookedSlots[type][state.dateISO]) || []);
+    buildSlots(type).forEach(t=>{
+      const isTaken = taken.has(t);
+      const el = document.createElement('div');
+      el.className = 'timeSlot' + (isTaken ? ' taken' : '') + (state.time===t ? ' active' : '');
+      el.textContent = t;
+      if(!isTaken) el.onclick = ()=>{ state.time = t; renderAll(); };
+      wrap.appendChild(el);
+    });
+  }
+
+  function renderSlip(){
+    const tests = selectedTestObjs();
+    $('#plAccession').textContent = previewAccession();
+    renderBarcode(previewAccession());
+
+    const listWrap = $('#plSlipTests');
+    if(!tests.length){
+      listWrap.innerHTML = `<div class="slipRow"><span class="slipK">Tests</span><span class="slipV">—</span></div>`;
+    } else {
+      listWrap.innerHTML = tests.map(t=>`<div class="slipRow"><span class="slipK">${t.name}</span><span class="slipV">$${t.price}</span></div>`).join('');
+    }
+
+    $('#plSlipCollection').textContent = currentCollection().title;
+    $('#plSlipDate').textContent = state.dateISO ? labelDate(state.dateISO) : '—';
+    $('#plSlipTime').textContent = state.time || '—';
+
+    const subtotal = tests.reduce((s,t)=>s+t.price,0);
+    const fee = tests.length ? currentCollection().fee : 0;
+    const total = subtotal + fee;
+    $('#plSlipPrice').textContent = tests.length ? '$'+total : '—';
+  }
+
+  function renderMyBookings(){
+    const wrap = $('#plMyBookings');
+    if(!state.myBookings.length){
+      wrap.innerHTML = `<div class="mono" style="font-size:12px;opacity:0.5;">No bookings yet</div>`;
+      return;
+    }
+    wrap.innerHTML = '';
+    state.myBookings
+      .slice()
+      .sort((a,b)=> (a.dateISO+a.time).localeCompare(b.dateISO+b.time))
+      .forEach(b=>{
+        const div = document.createElement('div');
+        div.className = 'myTicket';
+        div.innerHTML = `
+          <div class="myTicketTop">
+            <span>${b.accession}</span>
+            <button class="cancelX">CANCEL</button>
+          </div>
+          <div style="margin-top:6px;opacity:0.8;">${labelDate(b.dateISO)} · ${b.time} · ${b.collectionTitle}</div>
+          <div style="margin-top:2px;">${b.tests.map(t=>t.name).join(', ')}</div>
+          ${b.fastingHours>0 ? `<div style="margin-top:4px;color:var(--fasting);">Fasting ${b.fastingHours}h required</div>` : ''}
+        `;
+        div.querySelector('.cancelX').onclick = ()=> cancelBooking(b);
+        wrap.appendChild(div);
+      });
+  }
+
+  function renderSampleCount(){
+    const todayISO = isoOf(new Date());
+    let n = 0;
+    COLLECTION_TYPES.forEach(c=>{
+      n += ((state.bookedSlots[c.id] && state.bookedSlots[c.id][todayISO]) || []).length;
+    });
+    $('#plSampleCount').textContent = `${n} samples booked today`;
+  }
+
+  function renderAll(){
+    renderTests();
+    renderCollectionToggle();
+    renderDates();
+    renderTimes();
+    renderSlip();
+    renderMyBookings();
+    renderSampleCount();
+    $('#plFormMsg').textContent = '';
+  }
+
+  // ---------- ACTIONS ----------
+  async function confirmBooking(){
+    const msg = $('#plFormMsg');
+    const tests = selectedTestObjs();
+    const name = $('#plName').value.trim();
+    const age = $('#plAge').value.trim();
+    const gender = $('#plGender').value;
+    const phone = $('#plPhone').value.trim();
+    const address = $('#plAddress').value.trim();
+    const doctor = $('#plDoctor').value.trim();
+
+    if(!tests.length){ msg.textContent = 'Select at least one test.'; return; }
+    if(!state.dateISO){ msg.textContent = 'Pick a collection day.'; return; }
+    if(!state.time){ msg.textContent = 'Pick a time slot.'; return; }
+    if(!name){ msg.textContent = 'Enter patient name.'; return; }
+    if(!age){ msg.textContent = 'Enter patient age.'; return; }
+    if(!phone){ msg.textContent = 'Enter a phone number.'; return; }
+    if(state.collectionType==='home' && !address){ msg.textContent = 'Enter an address for home collection.'; return; }
+
+    await loadShared();
+    const type = state.collectionType;
+    const taken = new Set((state.bookedSlots[type] && state.bookedSlots[type][state.dateISO]) || []);
+    if(taken.has(state.time)){
+      msg.textContent = 'That slot was just taken — pick another.';
+      renderTimes();
+      return;
+    }
+
+    const fastingHours = Math.max(0, ...tests.map(t=>t.fastingHours));
+    const subtotal = tests.reduce((s,t)=>s+t.price,0);
+    const fee = currentCollection().fee;
+
+    const booking = {
+      id: 'lb_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      accession: finalAccession(),
+      tests: tests.map(t=>({id:t.id, name:t.name, sample:t.sample, price:t.price})),
+      fastingHours,
+      collectionType: type,
+      collectionTitle: currentCollection().title,
+      dateISO: state.dateISO,
+      time: state.time,
+      total: subtotal + fee,
+      patient: { name, age, gender, phone, address: type==='home' ? address : '', doctor },
+      createdAt: new Date().toISOString()
+    };
+
+    if(!state.bookedSlots[type]) state.bookedSlots[type] = {};
+    if(!state.bookedSlots[type][state.dateISO]) state.bookedSlots[type][state.dateISO] = [];
+    state.bookedSlots[type][state.dateISO].push(state.time);
+    await saveShared();
+
+    state.myBookings.push(booking);
+    await saveMine();
+
+    state.selectedTests = [];
+    state.time = null;
+    $('#plName').value = ''; $('#plAge').value=''; $('#plGender').value='';
+    $('#plPhone').value=''; $('#plAddress').value=''; $('#plDoctor').value='';
+
+    renderAll();
+    msg.style.color = 'var(--ok)';
+    msg.textContent = `Booked — ${booking.accession}. Collection ${labelDate(booking.dateISO)} at ${booking.time}.`;
+  }
+
+  async function cancelBooking(b){
+    state.myBookings = state.myBookings.filter(x=>x.id!==b.id);
+    await saveMine();
+
+    await loadShared();
+    const t = state.bookedSlots[b.collectionType];
+    if(t && t[b.dateISO]){
+      t[b.dateISO] = t[b.dateISO].filter(time=>time!==b.time);
+    }
+    await saveShared();
+    renderAll();
+  }
+
+  $('#plConfirmBtn').addEventListener('click', confirmBooking);
+
+  (async function init(){
+    await Promise.all([loadShared(), loadMine()]);
+    state.dateISO = isoOf(new Date());
+    renderAll();
+  })();
+})();
+</script>
